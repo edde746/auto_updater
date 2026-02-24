@@ -17,9 +17,26 @@ cmake_policy(VERSION 3.14...3.25)
 set(PLUGIN_NAME "auto_updater_windows_plugin")
 
 # WinSparkle
-set(WIN_SPARKLE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/WinSparkle-0.8.1")
-set(WIN_SPARKLE_BINARIES "${WIN_SPARKLE_DIR}/x64/Release/WinSparkle.dll")
-set(WIN_SPARKLE_LIBRARIES "${WIN_SPARKLE_DIR}/x64/Release/WinSparkle.lib")
+include(FetchContent)
+FetchContent_Declare(
+  WinSparkle
+  URL https://github.com/vslavik/winsparkle/releases/download/v0.9.2/WinSparkle-0.9.2.zip
+)
+FetchContent_MakeAvailable(WinSparkle)
+
+set(WIN_SPARKLE_DIR "${winsparkle_SOURCE_DIR}")
+
+# Select architecture-specific binaries
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64" OR CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64")
+  set(WIN_SPARKLE_ARCH_DIR "${WIN_SPARKLE_DIR}/ARM64/Release")
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(WIN_SPARKLE_ARCH_DIR "${WIN_SPARKLE_DIR}/x64/Release")
+else()
+  set(WIN_SPARKLE_ARCH_DIR "${WIN_SPARKLE_DIR}/Release")
+endif()
+
+set(WIN_SPARKLE_BINARIES "${WIN_SPARKLE_ARCH_DIR}/WinSparkle.dll")
+set(WIN_SPARKLE_LIBRARIES "${WIN_SPARKLE_ARCH_DIR}/WinSparkle.lib")
 
 # Any new source files that you add to the plugin should be added here.
 list(APPEND PLUGIN_SOURCES
@@ -50,7 +67,9 @@ target_compile_definitions(${PLUGIN_NAME} PRIVATE FLUTTER_PLUGIN_IMPL)
 # Source include directories and library dependencies. Add any plugin-specific
 # dependencies here.
 target_include_directories(${PLUGIN_NAME} INTERFACE
-  "${CMAKE_CURRENT_SOURCE_DIR}/include" 
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+target_include_directories(${PLUGIN_NAME} PRIVATE
   "${WIN_SPARKLE_DIR}/include"
 )
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
@@ -76,7 +95,6 @@ set(TEST_RUNNER "${PROJECT_NAME}_test")
 enable_testing()
 
 # Add the Google Test dependency.
-include(FetchContent)
 FetchContent_Declare(
   googletest
   URL https://github.com/google/googletest/archive/release-1.11.0.zip

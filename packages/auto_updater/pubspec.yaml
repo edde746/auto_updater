@@ -18,6 +18,7 @@ dependencies:
   auto_updater_macos: ^1.0.0
   auto_updater_platform_interface: ^1.0.0
   auto_updater_windows: ^1.0.0
+  cryptography: ^2.7.0
   flutter:
     sdk: flutter
   json_annotation: ^4.8.0
