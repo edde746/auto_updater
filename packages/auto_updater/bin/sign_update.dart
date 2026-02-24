@@ -22,9 +22,9 @@ Future<SimpleKeyPair> _loadKeyPair(String privateKeyPath) async {
   final contents = await file.readAsString();
 
   // Parse PEM-wrapped base64 seed
-  final lines = contents.split('\n').where(
+  final lines = contents.split('\n').map((line) => line.trim()).where(
     (line) =>
-        line.trim().isNotEmpty &&
+        line.isNotEmpty &&
         !line.startsWith('-----BEGIN') &&
         !line.startsWith('-----END'),
   );
