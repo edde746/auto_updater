@@ -56,8 +56,6 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
             userDriver: _userDriver!,
             delegate: self
         )
-        _updater?.clearFeedURLFromUserDefaults()
-        try? _updater?.start()
     }
     
     public func feedURLString(for updater: SPUUpdater) -> String? {
