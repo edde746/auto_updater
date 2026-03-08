@@ -74,6 +74,7 @@ target_include_directories(${PLUGIN_NAME} PRIVATE
 )
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
 target_link_libraries(${PLUGIN_NAME} PRIVATE ${WIN_SPARKLE_LIBRARIES})
+target_link_libraries(${PLUGIN_NAME} PRIVATE version)
 
 # List of absolute paths to libraries that should be bundled with the plugin.
 # This list could contain prebuilt libraries, or libraries created by an

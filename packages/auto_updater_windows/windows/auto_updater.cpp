@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <sstream>
+#include <vector>
 
 namespace {
 // Forward declarations for WinSparkle callbacks
@@ -60,6 +61,27 @@ AutoUpdater::~AutoUpdater() {}
 
 void AutoUpdater::SetFeedURL(std::string feedURL) {
   win_sparkle_set_appcast_url(feedURL.c_str());
+
+  // Extract build number from exe's FILEVERSION and tell WinSparkle about it,
+  // so the update dialog shows the correct current build number.
+  TCHAR exePath[MAX_PATH];
+  GetModuleFileName(NULL, exePath, MAX_PATH);
+  DWORD dummy;
+  DWORD versionInfoSize = GetFileVersionInfoSize(exePath, &dummy);
+  if (versionInfoSize > 0) {
+    std::vector<BYTE> versionInfo(versionInfoSize);
+    if (GetFileVersionInfo(exePath, 0, versionInfoSize, versionInfo.data())) {
+      VS_FIXEDFILEINFO* fileInfo;
+      UINT fileInfoSize;
+      if (VerQueryValue(versionInfo.data(), L"\\", (void**)&fileInfo,
+                        &fileInfoSize)) {
+        DWORD buildNumber = fileInfo->dwFileVersionLS & 0xFFFF;
+        win_sparkle_set_app_build_version(
+            std::to_wstring(buildNumber).c_str());
+      }
+    }
+  }
+
   win_sparkle_init();
 
   win_sparkle_set_error_callback(__onErrorCallback);
