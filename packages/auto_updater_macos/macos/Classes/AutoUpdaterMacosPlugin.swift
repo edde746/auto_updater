@@ -1,28 +1,28 @@
 import Cocoa
 import FlutterMacOS
 
-public class AutoUpdaterMacosPlugin: NSObject, FlutterPlugin,FlutterStreamHandler {
+public class AutoUpdaterMacosPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     private var _eventSink: FlutterEventSink?
-    
-    private var autoUpdater: AutoUpdater = AutoUpdater()
-    
-    public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "dev.leanflutter.plugins/auto_updater", binaryMessenger: registrar.messenger)
-        let instance = AutoUpdaterMacosPlugin()
-        registrar.addMethodCallDelegate(instance, channel: channel)
-        let eventChannel = FlutterEventChannel(name: "dev.leanflutter.plugins/auto_updater_event", binaryMessenger: registrar.messenger)
-        eventChannel.setStreamHandler(instance)
-        instance.autoUpdater.onEvent = {
-            (eventName: String, eventData: NSDictionary) in
-            guard let eventSink = instance._eventSink else {
-                return
-            }
+
+    private lazy var autoUpdater: AutoUpdater = {
+        let updater = AutoUpdater()
+        updater.onEvent = { [weak self] (eventName, eventData) in
+            guard let eventSink = self?._eventSink else { return }
             let event: NSDictionary = [
                 "type": eventName,
                 "data": eventData
             ]
             eventSink(event)
         }
+        return updater
+    }()
+
+    public static func register(with registrar: FlutterPluginRegistrar) {
+        let channel = FlutterMethodChannel(name: "dev.leanflutter.plugins/auto_updater", binaryMessenger: registrar.messenger)
+        let instance = AutoUpdaterMacosPlugin()
+        registrar.addMethodCallDelegate(instance, channel: channel)
+        let eventChannel = FlutterEventChannel(name: "dev.leanflutter.plugins/auto_updater_event", binaryMessenger: registrar.messenger)
+        eventChannel.setStreamHandler(instance)
     }
     
     public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
@@ -46,13 +46,14 @@ public class AutoUpdaterMacosPlugin: NSObject, FlutterPlugin,FlutterStreamHandle
             break
         case "checkForUpdates":
             let inBackground = args["inBackground"] as! Bool
-            if(inBackground) {
-                autoUpdater.checkForUpdatesInBackground()
-            }else {
-                autoUpdater.checkForUpdates()
+            DispatchQueue.main.async { [weak self] in
+                if inBackground {
+                    self?.autoUpdater.checkForUpdatesInBackground()
+                } else {
+                    self?.autoUpdater.checkForUpdates()
+                }
             }
             result(true)
-            break
         case "setScheduledCheckInterval":
             let interval = args["interval"] as! Int
             autoUpdater.setScheduledCheckInterval(interval)

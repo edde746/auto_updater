@@ -45,10 +45,15 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
     var feedURL: URL?
     public var onEvent:((String, NSDictionary) -> Void)?
     
+    private var _isStarted = false
+
     override init() {
         super.init()
-        let hostBundle: Bundle = Bundle.main
-        
+    }
+
+    private func ensureUpdater() {
+        guard _updater == nil else { return }
+        let hostBundle = Bundle.main
         _userDriver = SPUStandardUserDriver(hostBundle: hostBundle, delegate: nil)
         _updater = SPUUpdater(
             hostBundle: hostBundle,
@@ -65,7 +70,13 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
 
     public func setFeedURL(_ feedURL: URL?) {
         self.feedURL = feedURL
-        try? _updater?.start()
+        ensureUpdater()
+        if !_isStarted {
+            _isStarted = true
+            DispatchQueue.main.async { [weak self] in
+                try? self?._updater?.start()
+            }
+        }
     }
     
     public func checkForUpdates() {
